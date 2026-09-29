@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>𝕏 X Tree Studio v0.5</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#111;--muted:#68707a;--line:#e1e5e9;--accent:#111;--danger:#d33}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP",sans-serif}
+header{background:#000;color:#fff;padding:18px 16px 16px;position:sticky;top:0;z-index:10}
+header h1{font-size:20px;margin:0 0 5px}
+header p{margin:0;color:#cfd2d6;font-size:12px}
+main{max-width:900px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px #00000008}
+h2{font-size:16px;margin:0 0 12px}
+h3{font-size:15px;margin:0 0 10px}
+label{display:block;font-size:12px;font-weight:700;margin:12px 0 6px}
+input,textarea,select{width:100%;border:1px solid #cfd5da;border-radius:10px;padding:11px;font-size:15px;background:#fff;color:#111}
+textarea{min-height:105px;resize:vertical;line-height:1.55}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.account-box{border:2px solid #111;border-radius:14px;padding:12px;background:#fafafa}
+.account-box select{font-size:16px;font-weight:700}
+.account-hint{font-size:12px;color:var(--muted);margin-top:7px}
+.post{border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+.post-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.badge{font-size:11px;padding:4px 8px;border-radius:999px;background:#111;color:#fff;white-space:nowrap}
+.count{text-align:right;font-size:11px;color:var(--muted);margin-top:5px}
+.images{margin-top:10px}
+.images input{padding:8px}
+.image-count{font-size:12px;color:var(--muted);margin-top:6px}
+.preview-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:10px}
+.preview-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#eee}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button{border:0;border-radius:10px;padding:11px 14px;font-size:14px;font-weight:700;cursor:pointer;background:#111;color:#fff}
+button.secondary{background:#eef0f2;color:#111}
+button.danger{background:#fff0f0;color:var(--danger);border:1px solid #ffd1d1}
+.notice{background:#f0f7ff;border:1px solid #cfe4ff;padding:11px;border-radius:10px;font-size:12px;line-height:1.5}
+.scheduled-item{border-top:1px solid var(--line);padding:12px 0}
+.scheduled-item:first-child{border-top:0}
+.meta{font-size:12px;color:var(--muted);line-height:1.5}
+.small{font-size:11px;color:var(--muted)}
+pre{white-space:pre-wrap;background:#f7f7f7;border:1px solid var(--line);padding:12px;border-radius:10px;font-size:12px;line-height:1.5}
+@media(max-width:600px){.row{grid-template-columns:1fr}.preview-grid{grid-template-columns:repeat(2,1fr)}main{padding:10px}.card{padding:13px}}
+
+/* ===== 投稿モード ===== */
+.pm{position:fixed;inset:0;background:var(--bg);z-index:100;overflow:auto;-webkit-overflow-scrolling:touch}
+.pm-inner{max-width:900px;margin:0 auto;padding:14px 14px 90px}
+.pm-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pm-tabs{display:flex;gap:8px;margin:12px 0}
+.pm-tabs button{flex:1}
+.pm .big{width:100%;margin-top:10px;padding:15px 14px;font-size:15px}
+.pm .blue{background:#1d9bf0}
+.pm .green{background:#0a8f4e}
+.pm-imgs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.pm-imgs figure{margin:0}
+.pm-imgs img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;border:1px solid var(--line)}
+.pm-imgs button{width:100%;margin-top:5px;padding:8px;font-size:12px}
+.pm-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#111;color:#fff;padding:11px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center;z-index:200}
+.pm-toast.show{opacity:.95}
+.pm-flow{font-size:12px;line-height:1.7;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>𝕏 X Tree Studio v0.5</h1>
+  <p>3段ツリー投稿を作成・保存し、Xへ1段ずつ渡すスタジオ（画像自動圧縮対応）</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>① 投稿アカウント</h2>
+    <div class="account-box">
+      <label for="account">Xアカウントを選択</label>
+      <select id="account">
+        <option value="OSUSUMEzng">OSUSUMEpr　@OSUSUMEzng</option>
+        <option value="zettiNumag">紹介屋さん_漫画沼　@zettiNumag</option>
+        <option value="zettai_Numa_g">漫画_紹介本舗沼　@zettai_Numa_g</option>
+      </select>
+      <div class="account-hint">このツリーを投稿するアカウントを最初に選択できます。</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>② 基本情報</h2>
+    <div class="row">
+      <div>
+        <label>記事タイトル</label>
+        <input id="title" placeholder="例：今日の人妻・熟女系レビュー">
+      </div>
+      <div>
+        <label>ブログURL</label>
+        <input id="blog" placeholder="https://zettai-numa-guide.com/...">
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>③ 3段ツリーを作成</h2>
+    <div class="notice">
+      <b>画像は各段最大4枚。</b>選択時に自動圧縮します（長辺1280px・約250KB/枚）。<br>
+      1段目：最大4枚　／　2段目：最大4枚　／　3段目：最大4枚<br>
+      → 1つのツリーで最大12枚まで設定できます。
+    </div>
+
+    <div class="post">
+      <div class="post-head">
+        <h3>1段目・親投稿</h3>
+        <span class="badge">画像 最大4枚</span>
+      </div>
+      <textarea id="text1" maxlength="280" placeholder="1段目の文章を入力"></textarea>
+      <div class="count"><span id="count1">0</span> / 280</div>
+      <div class="images">
+        <label>画像（最大4枚）</label>
+        <input id="file1" type="file" accept="image/*" multiple>
+        <div id="imageCount1" class="image-count">選択中：0 / 4</div>
+        <div id="preview1" class="preview-grid"></div>
+      </div>
+    </div>
+
+    <div class="post">
+      <div class="post-head">
+        <h3>2段目・返信</h3>
+        <span class="badge">画像 最大4枚</span>
+      </div>
+      <textarea id="text2" maxlength="280" placeholder="2段目の文章を入力"></textarea>
+      <div class="count"><span id="count2">0</span> / 280</div>
+      <div class="images">
+        <label>画像（最大4枚）</label>
+        <input id="file2" type="file" accept="image/*" multiple>
+        <div id="imageCount2" class="image-count">選択中：0 / 4</div>
+        <div id="preview2" class="preview-grid"></div>
+      </div>
+    </div>
+
+    <div class="post">
+      <div class="post-head">
+        <h3>3段目・返信／送客</h3>
+        <span class="badge">画像 最大4枚</span>
+      </div>
+      <textarea id="text3" maxlength="280" placeholder="3段目の文章を入力"></textarea>
+      <div class="count"><span id="count3">0</span> / 280</div>
+      <div class="images">
+        <label>画像（最大4枚）</label>
+        <input id="file3" type="file" accept="image/*" multiple>
+        <div id="imageCount3" class="image-count">選択中：0 / 4</div>
+        <div id="preview3" class="preview-grid"></div>
+      </div>
+      <label>FANZAアフィリエイトURL（任意）</label>
+      <input id="aff" placeholder="https://video.dmm.co.jp/...">
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>④ 予約日時</h2>
+    <div class="row">
+      <div>
+        <label>日付</label>
+        <input id="date" type="date">
+      </div>
+      <div>
+        <label>時刻</label>
+        <input id="time" type="time">
+      </div>
+    </div>
+    <div class="actions">
+      <button id="save">このツリーを保存</button>
+      <button class="blue" id="pmOpen" style="background:#1d9bf0">投稿モード（Xに出す）</button>
+      <button class="secondary" id="copy">3段まとめてコピー</button>
+      <button class="secondary" id="previewBtn">プレビュー</button>
+      <button class="secondary" id="new">新規作成</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>⑤ 保存した予約</h2>
+    <div id="storageInfo" class="small" style="margin-bottom:8px"></div>
+    <div id="list"><div class="small">まだ保存されていません。</div></div>
+  </section>
+
+  <section class="card">
+    <h2>アカウント管理</h2>
+    <div class="row">
+      <input id="newAccountName" placeholder="表示名">
+      <input id="newAccountId" placeholder="@ユーザー名">
+    </div>
+    <div class="actions">
+      <button class="secondary" id="addAccount">アカウントを追加</button>
+    </div>
+    <div class="small">追加したアカウントはこのブラウザに保存されます。</div>
+  </section>
+
+  <section class="card">
+    <h2>プレビュー</h2>
+    <div id="previewText" class="small">ここに3段の内容が表示されます。</div>
+  </section>
+</main>
+
+
+<div id="pm" class="pm" style="display:none">
+  <div class="pm-inner">
+    <div class="pm-top"><b>𝕏 投稿モード</b><button class="secondary" id="pmClose">閉じる</button></div>
+    <div id="pmAcc" class="notice"></div>
+    <div id="pmTabs" class="pm-tabs"></div>
+    <div id="pmBody"></div>
+  </div>
+  <div id="pmToast" class="pm-toast"></div>
+</div>
+<script>
+const KEY = "xTreeStudio_v03";
+const ACCOUNT_KEY = "xTreeAccounts_v03";
+
+// ===== 画像圧縮の設定 =====
+const MAX_SIDE = 1280;            // 長辺の最大px
+const TARGET_BYTES = 250 * 1024;  // 1枚あたりの目標サイズ
+
+let images = {1:[],2:[],3:[]};
+
+const $ = id => document.getElementById(id);
+
+function countText(n){
+  $("count"+n).textContent = $("text"+n).value.length;
+}
+
+[1,2,3].forEach(n=>{
+  $("text"+n).addEventListener("input", ()=>countText(n));
+});
+
+function fmtSize(b){
+  return b >= 1048576 ? (b/1048576).toFixed(1)+"MB" : Math.round(b/1024)+"KB";
+}
+
+// 画像を縮小＋JPEG圧縮。目標サイズに収まるまで画質→サイズの順に段階的に下げる
+function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      let scale = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
+      let q = 0.85, data = "", size = 0;
+      for(let i=0;i<10;i++){
+        const w = Math.max(1, Math.round(img.width*scale));
+        const h = Math.max(1, Math.round(img.height*scale));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        data = c.toDataURL("image/jpeg", q);
+        size = Math.round((data.length - 23) * 3 / 4);
+        if(size <= TARGET_BYTES) break;
+        if(q > 0.6) q -= 0.1; else scale *= 0.85;
+      }
+      URL.revokeObjectURL(url);
+      resolve({name:file.name, data, size, origSize:file.size});
+    };
+    img.onerror = ()=>{
+      URL.revokeObjectURL(url);
+      reject(new Error("読み込み失敗: "+file.name));
+    };
+    img.src = url;
+  });
+}
+
+const readToken = {1:0,2:0,3:0};
+
+async function readFiles(n){
+  const input = $("file"+n);
+  const all = Array.from(input.files || []);
+  const files = all.slice(0,4);
+  const token = ++readToken[n];
+  images[n] = [];
+  $("preview"+n).innerHTML = "";
+
+  if(all.length > 4){
+    alert(n+"段目の画像は4枚までです。先頭4枚を使用します。");
+  }
+  if(!files.length){
+    $("imageCount"+n).textContent = "選択中：0 / 4";
+    return;
+  }
+
+  $("imageCount"+n).textContent = "圧縮中…";
+  try{
+    const results = await Promise.all(files.map(compressImage));
+    if(token !== readToken[n]) return; // 選び直された場合は破棄
+    images[n] = results.map(r=>({name:r.name, data:r.data}));
+    results.forEach(r=>{
+      const img = document.createElement("img");
+      img.src = r.data;
+      img.alt = r.name;
+      $("preview"+n).appendChild(img);
+    });
+    const orig = results.reduce((s,r)=>s+r.origSize,0);
+    const now = results.reduce((s,r)=>s+r.size,0);
+    $("imageCount"+n).textContent =
+      "選択中："+results.length+" / 4（圧縮 "+fmtSize(orig)+" → "+fmtSize(now)+"）";
+  }catch(e){
+    alert("画像の圧縮に失敗しました。"+e.message);
+    $("imageCount"+n).textContent = "選択中：0 / 4";
+  }
+}
+
+[1,2,3].forEach(n=>{
+  $("file"+n).addEventListener("change", ()=>readFiles(n));
+});
+
+function getData(){
+  return {
+    id: Date.now(),
+    account: $("account").value,
+    accountLabel: $("account").selectedOptions[0].textContent,
+    title: $("title").value,
+    blog: $("blog").value,
+    posts: [
+      {text:$("text1").value, images:images[1]},
+      {text:$("text2").value, images:images[2]},
+      {text:$("text3").value, images:images[3], aff:$("aff").value}
+    ],
+    date:$("date").value,
+    time:$("time").value
+  };
+}
+
+function updateStorageInfo(){
+  const raw = localStorage.getItem(KEY) || "";
+  const bytes = raw.length * 2; // UTF-16概算
+  $("storageInfo").textContent = "保存容量の目安：" + fmtSize(bytes) + " / 約5MB";
+}
+
+function loadList(){
+  const list = JSON.parse(localStorage.getItem(KEY) || "[]");
+  const el = $("list");
+  el.innerHTML = "";
+  updateStorageInfo();
+  if(!list.length){
+    el.innerHTML = '<div class="small">まだ保存されていません。</div>';
+    return;
+  }
+  list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  list.forEach(item=>{
+    const div=document.createElement("div");
+    div.className="scheduled-item";
+    const imageTotal=(item.posts||[]).reduce((s,p)=>s+(p.images||[]).length,0);
+    div.innerHTML = `
+      <b>${escapeHtml(item.title || "無題")}</b>
+      <div class="meta">${escapeHtml(item.accountLabel || item.account || "")}<br>
+      ${escapeHtml(item.date || "")} ${escapeHtml(item.time || "")}　画像 ${imageTotal}枚</div>
+      <div class="actions">
+        <button class="secondary" data-edit="${item.id}">編集</button>
+        <button class="danger" data-del="${item.id}">削除</button>
+      </div>`;
+    el.appendChild(div);
+  });
+
+  el.querySelectorAll("[data-del]").forEach(btn=>{
+    btn.onclick=()=>{
+      const id=Number(btn.dataset.del);
+      const arr=JSON.parse(localStorage.getItem(KEY)||"[]").filter(x=>x.id!==id);
+      localStorage.setItem(KEY,JSON.stringify(arr));
+      loadList();
+    };
+  });
+
+  el.querySelectorAll("[data-edit]").forEach(btn=>{
+    btn.onclick=()=>{
+      const id=Number(btn.dataset.edit);
+      const item=JSON.parse(localStorage.getItem(KEY)||"[]").find(x=>x.id===id);
+      if(item) fill(item);
+    };
+  });
+}
+
+function fill(item){
+  $("account").value=item.account || "";
+  $("title").value=item.title || "";
+  $("blog").value=item.blog || "";
+  $("date").value=item.date || "";
+  $("time").value=item.time || "";
+  $("aff").value=(item.posts?.[2]?.aff)||"";
+  [1,2,3].forEach(n=>{
+    $("text"+n).value=item.posts?.[n-1]?.text||"";
+    countText(n);
+    images[n]=item.posts?.[n-1]?.images||[];
+    $("preview"+n).innerHTML="";
+    images[n].slice(0,4).forEach(im=>{
+      const img=document.createElement("img");
+      img.src=im.data;
+      $("preview"+n).appendChild(img);
+    });
+    $("imageCount"+n).textContent="選択中："+Math.min(images[n].length,4)+" / 4";
+  });
+  updatePreview();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function save(){
+  const data=getData();
+  const arr=JSON.parse(localStorage.getItem(KEY)||"[]");
+  arr.push(data);
+  try{
+    localStorage.setItem(KEY,JSON.stringify(arr));
+    loadList();
+    alert("保存しました。");
+  }catch(e){
+    alert("保存できませんでした。保存容量がいっぱいです。古い予約を削除してください。");
+  }
+}
+
+function copyAll(){
+  const d=getData();
+  const text=[
+    "【1段目】\n"+d.posts[0].text,
+    "【2段目】\n"+d.posts[1].text,
+    "【3段目】\n"+d.posts[2].text+(d.posts[2].aff ? "\n"+d.posts[2].aff:"")
+  ].join("\n\n");
+  navigator.clipboard.writeText(text).then(()=>alert("3段まとめてコピーしました。")).catch(()=>alert(text));
+}
+
+function updatePreview(){
+  const d=getData();
+  $("previewText").innerHTML =
+    "<b>アカウント：</b>"+escapeHtml(d.accountLabel)+"<br><br>"+
+    "<b>1段目：</b>"+escapeHtml(d.posts[0].text)+"<br>画像 "+d.posts[0].images.length+"枚<br><br>"+
+    "<b>2段目：</b>"+escapeHtml(d.posts[1].text)+"<br>画像 "+d.posts[1].images.length+"枚<br><br>"+
+    "<b>3段目：</b>"+escapeHtml(d.posts[2].text)+"<br>画像 "+d.posts[2].images.length+"枚"+
+    (d.posts[2].aff ? "<br>FANZA URL："+escapeHtml(d.posts[2].aff):"");
+}
+
+function newPost(){
+  $("title").value="";
+  $("blog").value="";
+  $("text1").value="";
+  $("text2").value="";
+  $("text3").value="";
+  $("aff").value="";
+  $("date").value="";
+  $("time").value="";
+  [1,2,3].forEach(n=>{
+    readToken[n]++;
+    $("file"+n).value="";
+    $("preview"+n).innerHTML="";
+    $("imageCount"+n).textContent="選択中：0 / 4";
+    images[n]=[];
+    countText(n);
+  });
+  updatePreview();
+}
+
+function escapeHtml(s){
+  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+function loadAccounts(){
+  const defaults=[
+    {id:"OSUSUMEzng",name:"OSUSUMEpr"},
+    {id:"zettiNumag",name:"紹介屋さん_漫画沼"},
+    {id:"zettai_Numa_g",name:"漫画_紹介本舗沼"}
+  ];
+  let accounts=JSON.parse(localStorage.getItem(ACCOUNT_KEY)||"null")||defaults;
+  const sel=$("account");
+  sel.innerHTML="";
+  accounts.forEach(a=>{
+    const op=document.createElement("option");
+    op.value=a.id;
+    op.textContent=a.name+"　@"+a.id;
+    sel.appendChild(op);
+  });
+  localStorage.setItem(ACCOUNT_KEY,JSON.stringify(accounts));
+}
+
+
+// ===== 投稿モード：1段ずつコピー＆Xに渡してツリーにする =====
+const pm = {step:1, data:null, done:{}, reply:{}, files:{}};
+
+function pmToast(msg){
+  const t=$("pmToast");
+  t.textContent=msg;
+  t.classList.add("show");
+  clearTimeout(pmToast._t);
+  pmToast._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+function postText(d,n){
+  const p=d.posts[n-1];
+  return (p.text||"") + (n===3 && p.aff ? "\n"+p.aff : "");
+}
+
+async function copyText(t){
+  try{
+    await navigator.clipboard.writeText(t);
+    return true;
+  }catch(e){
+    const ta=document.createElement("textarea");
+    ta.value=t;
+    ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);
+    ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);
+    let ok=false;
+    try{ok=document.execCommand("copy");}catch(_){}
+    ta.remove();
+    return ok;
+  }
+}
+
+function toPngBlob(dataUrl){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement("canvas");
+      c.width=img.width;c.height=img.height;
+      c.getContext("2d").drawImage(img,0,0);
+      c.toBlob(b=>b?resolve(b):reject(new Error("png失敗")),"image/png");
+    };
+    img.onerror=()=>reject(new Error("読込失敗"));
+    img.src=dataUrl;
+  });
+}
+
+async function pmPrepareFiles(){
+  for(const n of [1,2,3]){
+    const ims=(pm.data.posts[n-1].images||[]).slice(0,4);
+    pm.files[n]=await Promise.all(ims.map(async(im,i)=>{
+      const b=await (await fetch(im.data)).blob();
+      return new File([b],"tree"+n+"_"+(i+1)+".jpg",{type:b.type||"image/jpeg"});
+    }));
+  }
+}
+
+function pmOpen(){
+  pm.data=getData();
+  pm.step=1;pm.done={};pm.reply={};pm.files={};
+  $("pm").style.display="block";
+  document.body.style.overflow="hidden";
+  pmRender();
+  pmPrepareFiles();
+}
+
+function pmClose(){
+  $("pm").style.display="none";
+  document.body.style.overflow="";
+}
+
+function pmRender(){
+  const d=pm.data, n=pm.step, p=d.posts[n-1];
+  const txt=postText(d,n);
+  const imgs=(p.images||[]).slice(0,4);
+  const labels={1:"親投稿",2:"返信",3:"返信／送客"};
+
+  $("pmAcc").innerHTML="投稿アカウント：<b>"+escapeHtml(d.accountLabel)+"</b><br>Xアプリ側でこのアカウントに切り替えてから始めてください。";
+
+  $("pmTabs").innerHTML=[1,2,3].map(i=>
+    '<button class="'+(i===n?'':'secondary')+'" data-step="'+i+'">'+i+'段目'+(pm.done[i]?' ✓':'')+'</button>'
+  ).join("");
+
+  let h='<div class="post"><div class="post-head"><h3>'+n+'段目・'+labels[n]+'</h3><span class="badge">画像 '+imgs.length+'枚</span></div>';
+  h+='<pre>'+(escapeHtml(txt)||"（文章が空です）")+'</pre>';
+  h+='<button class="big" data-act="copytext">① 文章をコピー</button>';
+
+  if(imgs.length){
+    h+='<div class="pm-imgs">'+imgs.map((im,i)=>
+      '<figure><img src="'+im.data+'" alt=""><button class="secondary" data-act="copyimg" data-i="'+i+'">画像'+(i+1)+'をコピー</button></figure>'
+    ).join("")+'</div>';
+    if(n===1){
+      h+='<button class="big secondary" data-act="share">② 文章＋画像をまとめてXへ共有（新規投稿）</button>';
+    }else{
+      h+='<button class="big secondary" data-act="share">② 画像をまとめて共有（写真に保存など）</button>';
+    }
+  }
+
+  if(n===1){
+    h+='<button class="big blue" data-act="open" style="background:#1d9bf0">③ Xで新規投稿を開く（文章入り）</button>';
+    h+='<div class="pm-flow">流れ：文章をコピー → Xの投稿画面に貼り付け → 画像を貼り付け／添付 → 投稿。<br>投稿できたら「済・次の段へ」。</div>';
+  }else{
+    h+='<label>'+(n-1)+'段目の投稿URL（返信先）</label>';
+    h+='<input id="pmReply" inputmode="url" placeholder="https://x.com/.../status/123..." value="'+escapeHtml(pm.reply[n]||"")+'">';
+    h+='<button class="big blue" data-act="open" style="background:#1d9bf0">③ 返信画面をXで開く（文章入り）</button>';
+    h+='<div class="pm-flow">'+(n-1)+'段目を投稿したら、その投稿の「共有→リンクをコピー」で取れるURLを上に貼ります。貼ると返信先つきでXが開きます。<br>URLを貼らない場合は、Xで'+(n-1)+'段目を開き、返信ボタンから文章を貼り付けてください。</div>';
+  }
+
+  h+='<div class="actions">';
+  if(n>1) h+='<button class="secondary" data-act="prev">← 前の段</button>';
+  h+='<button class="green" data-act="next" style="background:#0a8f4e">'+(n<3?'済・次の段へ →':'全部完了')+'</button>';
+  h+='</div></div>';
+
+  $("pmBody").innerHTML=h;
+}
+
+async function pmAction(act,btn){
+  const d=pm.data, n=pm.step;
+  const txt=postText(d,n);
+
+  if(act==="copytext"){
+    pmToast(await copyText(txt) ? "文章をコピーしました" : "コピーできませんでした");
+  }
+
+  else if(act==="copyimg"){
+    const i=Number(btn.dataset.i);
+    const im=d.posts[n-1].images[i];
+    try{
+      if(typeof ClipboardItem==="undefined") throw new Error("no");
+      await navigator.clipboard.write([new ClipboardItem({"image/png":toPngBlob(im.data)})]);
+      pmToast("画像"+(i+1)+"をコピーしました");
+    }catch(e){
+      pmToast("画像コピー不可。『画像をまとめて共有』を使ってください");
+    }
+  }
+
+  else if(act==="share"){
+    const files=pm.files[n];
+    if(!files){pmToast("画像を準備中です。もう一度押してください");return;}
+    const payload = n===1 ? {files,text:txt} : {files};
+    if(navigator.canShare && navigator.canShare(payload)){
+      try{await navigator.share(payload);}
+      catch(e){if(e.name!=="AbortError") pmToast("共有できませんでした");}
+    }else{
+      pmToast("この環境は画像共有に未対応です。画像を長押しして保存してください");
+    }
+  }
+
+  else if(act==="open"){
+    let url="https://x.com/intent/post?text="+encodeURIComponent(txt);
+    if(n>1){
+      const m=(pm.reply[n]||"").match(/status\/(\d+)/);
+      if(m) url+="&in_reply_to="+m[1];
+      else pmToast("返信先URLなしで開きます。Xで返信ボタンから貼ってください");
+    }
+    window.open(url,"_blank");
+  }
+
+  else if(act==="prev"){
+    pm.step=Math.max(1,n-1);pmRender();
+  }
+
+  else if(act==="next"){
+    pm.done[n]=true;
+    if(n<3){pm.step=n+1;pmRender();$("pm").scrollTo({top:0});}
+    else{pmRender();pmToast("3段ツリー完了！");}
+  }
+}
+
+$("pmOpen").onclick=pmOpen;
+$("pmClose").onclick=pmClose;
+$("pmTabs").addEventListener("click",e=>{
+  const b=e.target.closest("[data-step]");
+  if(b){pm.step=Number(b.dataset.step);pmRender();}
+});
+$("pmBody").addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");
+  if(b) pmAction(b.dataset.act,b);
+});
+$("pmBody").addEventListener("input",e=>{
+  if(e.target.id==="pmReply") pm.reply[pm.step]=e.target.value;
+});
+
+$("save").onclick=save;
+$("copy").onclick=copyAll;
+$("previewBtn").onclick=()=>{updatePreview();$("previewText").scrollIntoView({behavior:"smooth",block:"start"})};
+$("new").onclick=()=>{if(confirm("入力中の内容をクリアしますか？"))newPost()};
+$("addAccount").onclick=()=>{
+  const name=$("newAccountName").value.trim();
+  const id=$("newAccountId").value.trim().replace(/^@/,"");
+  if(!name || !id){alert("表示名とユーザー名を入力してください。");return;}
+  const arr=JSON.parse(localStorage.getItem(ACCOUNT_KEY)||"[]");
+  if(arr.some(a=>a.id===id)){alert("そのアカウントは既にあります。");return;}
+  arr.push({id,name});
+  localStorage.setItem(ACCOUNT_KEY,JSON.stringify(arr));
+  loadAccounts();
+  $("account").value=id;
+  $("newAccountName").value="";
+  $("newAccountId").value="";
+};
+
+loadAccounts();
+[1,2,3].forEach(countText);
+loadList();
+</script>
+</body>
+</html>
