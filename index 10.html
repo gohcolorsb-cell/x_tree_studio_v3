@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>X投稿ボード</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="X投稿ボード">
+<meta name="theme-color" content="#14171c">
+<style>
+:root{--bg:#14171c;--panel:#1c2129;--panel2:#232935;--line:#2e3542;--text:#e9edf1;--muted:#8993a0;--amber:#e8a33d;--danger:#d36b5b;--done:#4fa678}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+button,input,textarea{font:inherit}button{cursor:pointer}.app{max-width:760px;margin:auto;padding:calc(12px + env(safe-area-inset-top)) 12px calc(70px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:4px 2px 14px;margin-bottom:12px}.title{font-size:15px;color:var(--muted)}.title b{color:var(--text)}
+.datebar{display:flex;gap:7px;align-items:center;margin-bottom:10px}.datebar button,.datebar input,.select{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px}.datebar button{width:38px}.datebar input{flex:1}.dow{font-size:12px;color:var(--muted)}
+.accounts{display:flex;gap:6px;overflow:auto;padding-bottom:8px}.chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:7px 12px}.chip.active{color:var(--text);background:var(--panel2);border-color:#687383}
+.settings{margin:0 0 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px}.settings summary{cursor:pointer;color:var(--muted);font-size:13px}.account-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.account-row input,.url{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px}.small{font-size:11px;color:var(--muted)}
+.slot{border-top:1px solid var(--line)}.slot-head{display:flex;align-items:center;gap:9px;padding:13px 3px}.time{font-size:18px;font-weight:700;width:54px}.bar{width:6px;align-self:stretch;border-radius:4px}.slot-main{flex:1;min-width:0}.slot-label{font-size:11px;color:var(--muted)}.preview{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}.badge{font-size:11px;padding:4px 8px;border-radius:999px;background:var(--panel2);color:var(--muted)}.badge.done{color:var(--done)}.chev{color:var(--muted)}
+.editor{display:none;padding:0 2px 18px}.slot.open .editor{display:block}
+.thread{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:9px}.thread-title{font-size:12px;color:var(--muted);margin-bottom:7px}.thread textarea{width:100%;min-height:82px;resize:vertical;background:transparent;border:0;outline:0;color:var(--text);line-height:1.5}.count{font-size:11px;color:var(--muted)}.count.over{color:var(--danger)}
+.images{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}.imgbox{aspect-ratio:1/1;border:1px dashed var(--line);border-radius:7px;overflow:hidden;position:relative;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center}.imgbox img{width:100%;height:100%;object-fit:cover}.rm{position:absolute;right:3px;top:3px;width:22px;height:22px;border:0;border-radius:50%;background:#000b;color:#fff}.imgcopy{position:absolute;left:3px;bottom:3px;font-size:10px;border:0;border-radius:5px;background:#000b;color:#fff;padding:3px 6px}.image-btn{margin-top:7px;width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:8px}.url-wrap{margin-top:8px}.url-wrap label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:7px;padding:9px 12px}.primary{background:var(--amber);color:#1b1307;border-color:var(--amber);font-weight:700}.danger{color:var(--danger)}
+.add{width:100%;border:1px dashed var(--line);background:transparent;color:var(--muted);padding:9px;border-radius:8px;margin-bottom:9px}
+.footer{margin-top:18px;text-align:center}.reset{border:0;background:none;color:var(--muted);text-decoration:underline;font-size:12px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#252c36;border:1px solid var(--line);padding:9px 15px;border-radius:18px;opacity:0;pointer-events:none;transition:.2s;z-index:9;max-width:88%;text-align:center;line-height:1.5}.toast.show{opacity:1}
+@media(max-width:420px){.account-row{grid-template-columns:1fr}.images{gap:4px}.thread{padding:9px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="title"><b>X投稿ボード</b> ・ 3アカウント</div><span class="small">iPhone対応</span></header>
+
+<div class="datebar">
+<button id="prev">‹</button><input id="date" type="date"><span class="dow" id="dow"></span><button id="next">›</button>
+</div>
+
+<div class="accounts" id="accounts"></div>
+
+<details class="settings">
+<summary>⚙ アカウント設定</summary>
+<div class="small" style="margin-top:8px">ここでは表示名・Xユーザー名を保存します。X APIの認証情報は保存しません。</div>
+<div id="accountSettings"></div>
+</details>
+
+<div id="board"></div>
+<div class="footer"><button class="reset" id="reset">この日の内容をすべて消去</button></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const ACC=["a1","a2","a3"];
+const SLOTS=["08:00","12:00","15:00","17:00","20:00","23:00"];
+const COLORS={a1:"#e8a33d",a2:"#5b8fd6",a3:"#b07cd6"};
+const DOW=["日","月","火","水","木","金","土"];
+let state={date:today(),filter:"all",names:{a1:"OSUSUMEpr",a2:"紹介屋さん_漫画沼",a3:"漫画_紹介本舗沼"},handles:{a1:"",a2:"",a3:""},data:{a1:{},a2:{},a3:{}},open:null};
+
+function today(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function key(a,s){return `xboard:v2:${a}:${state.date}:${s}`}
+function settingsKey(){return "xboard:v2:settings"}
+function blank(){return {thread:[{text:"",images:[],url:""},{text:"",images:[],url:""},{text:"",images:[],url:""}],posted:false}}
+function toast(m){let e=document.getElementById("toast");e.textContent=m;e.classList.add("show");clearTimeout(window.__t);window.__t=setTimeout(()=>e.classList.remove("show"),m.length>20?4200:2200)}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function saveSettings(){localStorage.setItem(settingsKey(),JSON.stringify({names:state.names,handles:state.handles}))}
+function loadSettings(){try{let x=JSON.parse(localStorage.getItem(settingsKey())||"null");if(x){state.names={...state.names,...x.names};state.handles={...state.handles,...x.handles}}}catch(e){}}
+function loadDay(){ACC.forEach(a=>{state.data[a]={};SLOTS.forEach(s=>{try{let x=localStorage.getItem(key(a,s));if(x)state.data[a][s]=JSON.parse(x)}catch(e){}})})}
+function save(a,s){
+ let json=JSON.stringify(state.data[a][s]);
+ let bytes=new Blob([json]).size;
+ if(bytes>1.5*1024*1024){toast(`この枠のデータが大きすぎます(約${(bytes/1024/1024).toFixed(1)}MB)。画像を減らすか差し替えてください`);return}
+ try{localStorage.setItem(key(a,s),json);toast("保存しました")}
+ catch(e){toast("端末の保存容量がいっぱいです。他の日の画像を減らすか消去してください")}
+}
+function status(a,s){let d=state.data[a][s];if(!d)return"empty";return d.posted?"done":(d.thread||[]).some(t=>t.text.trim()||t.images?.length||t.url?.trim())?"draft":"empty"}
+
+function renderAccounts(){
+ const box=document.getElementById("accounts");box.innerHTML="";
+ let all=document.createElement("button");all.className="chip "+(state.filter==="all"?"active":"");all.textContent="すべて";all.onclick=()=>{state.filter="all";render()};box.appendChild(all);
+ ACC.forEach(a=>{let b=document.createElement("button");b.className="chip "+(state.filter===a?"active":"");b.textContent=state.names[a];b.onclick=()=>{state.filter=a;render()};box.appendChild(b)});
+ const set=document.getElementById("accountSettings");set.innerHTML="";
+ ACC.forEach(a=>{set.insertAdjacentHTML("beforeend",`<div class="account-row"><input data-name="${a}" value="${esc(state.names[a])}" placeholder="表示名"><input data-handle="${a}" value="${esc(state.handles[a])}" placeholder="@ユーザー名"></div>`)});
+ set.querySelectorAll("input").forEach(i=>i.onchange=()=>{if(i.dataset.name)state.names[i.dataset.name]=i.value||state.names[i.dataset.name];else state.handles[i.dataset.handle]=i.value;saveSettings();renderAccounts();renderBoard()});
+}
+function countContent(d){return (d.thread||[]).filter(t=>t.text.trim()||t.images?.length||t.url?.trim()).length}
+function renderBoard(){
+ const board=document.getElementById("board");board.innerHTML="";
+ let list=state.filter==="all"?ACC:[state.filter];
+ SLOTS.forEach(s=>list.forEach(a=>{
+  let d=state.data[a][s], st=status(a,s), n=d?countContent(d):0, first=d?.thread?.[0]?.text?.trim()||"";
+  let el=document.createElement("section");el.className="slot "+(state.open===`${a}:${s}`?"open":"");
+  el.innerHTML=`<div class="slot-head"><div class="time">${s}</div><div class="bar" style="background:${COLORS[a]}"></div><div class="slot-main">${state.filter==="all"?`<div class="slot-label">${esc(state.names[a])}</div>`:""}<div class="preview">${esc(first)||"タップして作成"}</div></div><span class="badge ${st==="done"?"done":""}">${st==="empty"?"未設定":st==="done"?"投稿済み":`下書き ${n}件`}</span><span class="chev">›</span></div><div class="editor"></div>`;
+  el.querySelector(".slot-head").onclick=()=>{state.open=state.open===`${a}:${s}`?null:`${a}:${s}`;renderBoard()};
+  board.appendChild(el);if(state.open===`${a}:${s}`)renderEditor(el.querySelector(".editor"),a,s);
+ }))
+}
+function renderEditor(box,a,s){
+ let d=state.data[a][s]||blank();state.data[a][s]=d;
+ while(d.thread.length<3)d.thread.push({text:"",images:[],url:""});
+ box.innerHTML="";
+ d.thread.forEach((t,i)=>{
+  if(!Array.isArray(t.images))t.images=t.image?[t.image]:[];
+  t.images=t.images.slice(0,4);
+  let b=document.createElement("div");b.className="thread";
+  b.innerHTML=`<div class="thread-title">${i===0?"① 最初の投稿":`${i+1}投稿目・前の投稿への返信`}</div><textarea maxlength="280" placeholder="投稿文を入力…">${esc(t.text)}</textarea><div class="count">${t.text.length} / 280</div><div class="images">${[0,1,2,3].map(j=>`<div class="imgbox" data-img="${j}">${t.images[j]?`<img src="${t.images[j]}"><button class="rm" data-rm="${j}">×</button><button class="imgcopy" data-imgcopy="${j}">画像コピー</button>`:"＋画像"}</div>`).join("")}</div><div class="actions"><button class="btn image-btn">画像を選択（最大4枚）</button>${t.images.length>1?`<button class="btn imgcopyall-btn">画像を全てコピー(${t.images.length}枚)</button>`:""}<button class="btn copy-btn">この投稿をコピー</button>${d.thread.length>1?`<button class="btn danger del-btn">この投稿を削除</button>`:""}</div>${i===d.thread.length-1?`<div class="url-wrap"><label>この投稿に付けるURL（最後の投稿用）</label><input class="url" value="${esc(t.url||"")}" placeholder="https://..."></div>`:""}`;
+  box.appendChild(b);
+  let ta=b.querySelector("textarea");ta.oninput=()=>{t.text=ta.value;let c=b.querySelector(".count");c.textContent=`${t.text.length} / 280`;c.classList.toggle("over",t.text.length>280)};
+  let urlInp=b.querySelector(".url");if(urlInp)urlInp.oninput=()=>{t.url=urlInp.value};
+  b.querySelector(".image-btn").onclick=()=>{
+   let remain=4-t.images.length;
+   if(remain<=0){toast("画像は1投稿につき最大4枚です");return}
+   let inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.multiple=true;
+   inp.onchange=async()=>{let files=[...inp.files].sort((x,y)=>x.name.localeCompare(y.name,undefined,{numeric:true,sensitivity:"base"})||x.lastModified-y.lastModified).slice(0,remain);for(let f of files){let data=await readImage(f);t.images.push(data)}t.images=t.images.slice(0,4);renderEditor(box,a,s)};
+   inp.click()
+  };
+  b.querySelectorAll("[data-rm]").forEach(x=>x.onclick=()=>{t.images.splice(+x.dataset.rm,1);renderEditor(box,a,s)});
+  b.querySelectorAll("[data-imgcopy]").forEach(x=>x.onclick=()=>copyImage(t.images[+x.dataset.imgcopy]));
+  let copyAllBtn=b.querySelector(".imgcopyall-btn");if(copyAllBtn)copyAllBtn.onclick=()=>copyAllImages(t.images);
+  b.querySelector(".copy-btn").onclick=async()=>{
+   let out=t.text+(t.url?`\n${t.url}`:"");
+   try{await navigator.clipboard.writeText(out);toast(`${i+1}投稿目をコピーしました`)}catch(e){toast("コピーできませんでした")}
+  };
+  let delBtn=b.querySelector(".del-btn");if(delBtn)delBtn.onclick=()=>{d.thread.splice(i,1);renderEditor(box,a,s)};
+ });
+ let add=document.createElement("button");add.className="add";add.textContent="＋ 次の投稿を追加してスレッドを続ける";add.onclick=()=>{d.thread.push({text:"",images:[],url:""});renderEditor(box,a,s)};box.appendChild(add);
+ let act=document.createElement("div");act.className="actions";
+ act.innerHTML=`<button class="btn primary save-btn">保存</button><button class="btn copyall-btn">3投稿を一括コピー</button><button class="btn toggle-btn">${d.posted?"下書きに戻す":"投稿済みにする"}</button>`;
+ box.appendChild(act);
+ act.querySelector(".save-btn").onclick=()=>save(a,s);
+ act.querySelector(".copyall-btn").onclick=()=>copyAll(d);
+ act.querySelector(".toggle-btn").onclick=()=>{d.posted=!d.posted;save(a,s);render()};
+}
+async function copyAll(d){
+ let out=d.thread.filter(t=>t.text.trim()||t.url?.trim()).map((t,i)=>`${i+1}投稿目\n${t.text}${t.url?`\n${t.url}`:""}`).join("\n\n---\n\n");
+ try{await navigator.clipboard.writeText(out);toast("3投稿まとめてコピーしました")}catch(e){toast("コピーできませんでした")}
+}
+async function copyAllImages(images){
+ if(!images.length){toast("画像がありません");return}
+ if(!navigator.clipboard || !window.ClipboardItem){toast("この機能はこの環境では使えません。1枚ずつコピーしてください");return}
+ try{
+  const items=images.map(src=>new ClipboardItem({"image/jpeg":fetch(src).then(r=>r.blob())}));
+  await navigator.clipboard.write(items);
+  toast(`${images.length}枚まとめてコピーしました。貼り付け先が1枚しか受け付けない場合は個別コピーを使ってください`);
+ }catch(e){toast("まとめてのコピーに失敗しました。1枚ずつのコピーをお試しください")}
+}
+function copyImage(dataUrl){
+ if(!navigator.clipboard || !window.ClipboardItem){toast("この画像コピー機能はこの環境では使えません。長押し保存を使ってください");return}
+ try{
+  navigator.clipboard.write([new ClipboardItem({"image/jpeg":fetch(dataUrl).then(r=>r.blob())})])
+   .then(()=>toast("画像をコピーしました。Xの投稿欄で長押し→ペースト"))
+   .catch(()=>toast("コピーに失敗しました。長押し保存を使ってください"));
+ }catch(e){toast("コピーに失敗しました。長押し保存を使ってください")}
+}
+function readImage(file){return new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>{let img=new Image();img.onload=()=>{let max=1280,scale=Math.min(1,max/img.width),c=document.createElement("canvas");c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext("2d").drawImage(img,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.72))};img.onerror=rej;img.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+function render(){let d=new Date(state.date+"T00:00:00");document.getElementById("date").value=state.date;document.getElementById("dow").textContent="("+DOW[d.getDay()]+")";renderAccounts();renderBoard()}
+document.getElementById("date").onchange=e=>{state.date=e.target.value;state.open=null;loadDay();render()};
+document.getElementById("prev").onclick=()=>move(-1);document.getElementById("next").onclick=()=>move(1);
+function move(n){let d=new Date(state.date+"T00:00:00");d.setDate(d.getDate()+n);state.date=d.toISOString().slice(0,10);state.open=null;loadDay();render()}
+document.getElementById("reset").onclick=()=>{if(!confirm("この日の3アカウント分をすべて消去します。よろしいですか？"))return;ACC.forEach(a=>SLOTS.forEach(s=>localStorage.removeItem(key(a,s))));loadDay();state.open=null;toast("消去しました");render()};
+loadSettings();loadDay();render();
+</script>
+</body>
+</html>
